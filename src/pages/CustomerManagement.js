@@ -351,10 +351,6 @@ function CustomerManagement() {
       <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} title="Hapus Pengguna" message={`Hapus pengguna "${deleteTarget?.name}"? Semua kamera, langganan, dan riwayat pembayaran terkait juga akan dihapus.`} loading={deleting} />
     </div>
   );
-
-  function getCameraCount(id) {
-    return cameras.filter(c => c.userId === id).length;
-  }
 }
 
 export default CustomerManagement;
