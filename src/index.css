@@ -216,12 +216,15 @@ button:disabled {
 /* Main content */
 .main-content {
   margin-left: 260px;
-  transition: margin-left 0.3s ease;
+  width: calc(100% - 260px);
+  transition: margin-left 0.3s ease, width 0.3s ease;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .main-content.sidebar-collapsed {
   margin-left: 70px;
+  width: calc(100% - 70px);
 }
 
 /* Header */
@@ -488,6 +491,7 @@ button:disabled {
   }
   .main-content {
     margin-left: 0;
+    width: 100%;
   }
 }
 
