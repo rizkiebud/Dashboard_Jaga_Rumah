@@ -8,7 +8,7 @@ const NAV_ITEMS = [
     group: 'MENU UTAMA',
     items: [
       { to: '/dashboard', label: 'Dashboard', icon: <DashIcon /> },
-      { to: '/cameras', label: 'Manajemen CCTV', icon: <CamIcon /> },
+      { to: '/emergency', label: 'Emergency Call', icon: <EmergencyIcon />, badge: 'emergency' },
       { to: '/customers', label: 'Manajemen Pengguna', icon: <UsersIcon /> },
     ],
   },
@@ -23,7 +23,7 @@ const NAV_ITEMS = [
     group: 'LAPORAN',
     items: [
       { to: '/reports', label: 'Laporan & Analitik', icon: <ReportIcon /> },
-      { to: '/alerts', label: 'Peringatan', icon: <AlertIcon />, badge: true },
+      { to: '/alerts', label: 'Peringatan', icon: <AlertIcon />, badge: 'alerts' },
     ],
   },
   {
@@ -97,12 +97,15 @@ function Sidebar({ collapsed }) {
               >
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   {item.icon}
-                  {item.badge && stats.unresolvedAlerts > 0 && (
+                  {item.badge === 'alerts' && stats.unresolvedAlerts > 0 && (
                     <div className="notification-dot" style={{ width: 7, height: 7 }} />
+                  )}
+                  {item.badge === 'emergency' && stats.activeEmergencies > 0 && (
+                    <div className="notification-dot" style={{ width: 7, height: 7, background: '#f59e0b' }} />
                   )}
                 </div>
                 {!collapsed && <span>{item.label}</span>}
-                {!collapsed && item.badge && stats.unresolvedAlerts > 0 && (
+                {!collapsed && item.badge === 'alerts' && stats.unresolvedAlerts > 0 && (
                   <span style={{
                     marginLeft: 'auto',
                     background: '#ef4444',
@@ -113,6 +116,19 @@ function Sidebar({ collapsed }) {
                     borderRadius: '9999px',
                   }}>
                     {stats.unresolvedAlerts}
+                  </span>
+                )}
+                {!collapsed && item.badge === 'emergency' && stats.activeEmergencies > 0 && (
+                  <span style={{
+                    marginLeft: 'auto',
+                    background: '#f59e0b',
+                    color: 'white',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    padding: '1px 7px',
+                    borderRadius: '9999px',
+                  }}>
+                    {stats.activeEmergencies}
                   </span>
                 )}
               </NavLink>
@@ -180,6 +196,13 @@ function DashIcon() {
       <rect x="14" y="3" width="7" height="7" rx="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <rect x="14" y="14" width="7" height="7" rx="1.5" strokeLinecap="round" strokeLinejoin="round" />
       <rect x="3" y="14" width="7" height="7" rx="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function EmergencyIcon() {
+  return (
+    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
     </svg>
   );
 }

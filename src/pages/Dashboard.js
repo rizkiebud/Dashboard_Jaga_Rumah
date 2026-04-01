@@ -2,13 +2,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell,
+  ResponsiveContainer,
 } from 'recharts';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import {
-  formatCurrency, getRevenueChartData, getCameraStatusData,
-  STATUS_CONFIG, PLANS,
+  formatCurrency, getRevenueChartData, PLANS,
 } from '../utils/helpers';
 
 /* ─── Stat Card ─────────────────────────────────────────────── */
@@ -99,92 +98,61 @@ function MiniStat({ label, value, color, icon }) {
   );
 }
 
-/* ─── Camera Feed Card ───────────────────────────────────────── */
-function CameraFeedCard({ cam }) {
-  const isOnline = cam.status === 'online';
-  const isOffline = cam.status === 'offline';
+/* ─── Emergency Quick Card ───────────────────────────────────── */
+const CAT_META = {
+  police:   { icon: '🚔', color: '#3b82f6', label: 'Kepolisian' },
+  fire:     { icon: '🚒', color: '#ef4444', label: 'Pemadam' },
+  medical:  { icon: '🚑', color: '#10b981', label: 'Medis' },
+  security: { icon: '💂', color: '#8b5cf6', label: 'Keamanan' },
+  disaster: { icon: '🆘', color: '#f59e0b', label: 'Bencana' },
+  other:    { icon: '📞', color: '#64748b', label: 'Lainnya' },
+};
+
+function EmergencyQuickCard({ contact, onDial }) {
+  const cat = CAT_META[contact.category] || CAT_META.other;
+  const priColor = contact.priority === 1 ? '#ef4444' : contact.priority === 2 ? '#f59e0b' : '#10b981';
   return (
     <div style={{
-      borderRadius: '14px', overflow: 'hidden',
-      background: '#0a0f1e',
-      border: `1px solid ${isOnline ? 'rgba(59,130,246,0.2)' : 'rgba(255,255,255,0.05)'}`,
-      boxShadow: isOnline ? '0 4px 16px rgba(59,130,246,0.1)' : '0 2px 8px rgba(0,0,0,0.15)',
-      transition: 'transform 0.2s ease',
+      background: 'white', borderRadius: '14px', padding: '16px',
+      border: `1px solid ${cat.color}22`,
+      boxShadow: `0 2px 8px ${cat.color}10`,
+      display: 'flex', alignItems: 'center', gap: '12px',
+      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
     }}
-      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 6px 20px ${cat.color}20`; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 2px 8px ${cat.color}10`; }}
     >
-      {/* Feed area */}
       <div style={{
-        aspectRatio: '16/9', position: 'relative',
-        background: isOnline
-          ? 'linear-gradient(135deg, #0d1b3e 0%, #1e3a8a 60%, #1e40af 100%)'
-          : 'linear-gradient(135deg, #111 0%, #1c1c1c 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
+        background: `${cat.color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
       }}>
-        {/* Scan lines effect */}
-        {isOnline && (
-          <div style={{
-            position: 'absolute', inset: 0, opacity: 0.04,
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,1) 2px, rgba(255,255,255,1) 4px)',
-          }} />
-        )}
-        {/* Camera icon */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <svg width="30" height="30" fill="none" viewBox="0 0 24 24"
-            stroke={isOnline ? '#60a5fa' : '#374151'} strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.879V15.12a1 1 0 01-1.447.89L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        </div>
-        {/* Corner indicators */}
-        {isOnline && (
-          <>
-            <div style={{ position: 'absolute', top: 6, left: 6, width: 10, height: 10, borderTop: '2px solid #3b82f6', borderLeft: '2px solid #3b82f6', borderRadius: '1px 0 0 0', opacity: 0.7 }} />
-            <div style={{ position: 'absolute', top: 6, right: 6, width: 10, height: 10, borderTop: '2px solid #3b82f6', borderRight: '2px solid #3b82f6', borderRadius: '0 1px 0 0', opacity: 0.7 }} />
-            <div style={{ position: 'absolute', bottom: 6, left: 6, width: 10, height: 10, borderBottom: '2px solid #3b82f6', borderLeft: '2px solid #3b82f6', borderRadius: '0 0 0 1px', opacity: 0.7 }} />
-            <div style={{ position: 'absolute', bottom: 6, right: 6, width: 10, height: 10, borderBottom: '2px solid #3b82f6', borderRight: '2px solid #3b82f6', borderRadius: '0 0 1px 0', opacity: 0.7 }} />
-          </>
-        )}
-        {/* Status chip */}
-        <div style={{
-          position: 'absolute', top: 8, right: 8,
-          display: 'flex', alignItems: 'center', gap: '4px',
-          background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
-          borderRadius: '6px', padding: '3px 7px',
-          border: `1px solid ${isOnline ? 'rgba(16,185,129,0.3)' : isOffline ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`,
-        }}>
-          <div style={{
-            width: 5, height: 5, borderRadius: '50%',
-            background: isOnline ? '#10b981' : isOffline ? '#ef4444' : '#f59e0b',
-            animation: isOnline ? 'blink 2s infinite' : 'none',
-          }} />
-          <span style={{
-            fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.05em',
-            color: isOnline ? '#10b981' : isOffline ? '#ef4444' : '#f59e0b',
-          }}>
-            {isOnline ? 'LIVE' : isOffline ? 'OFFLINE' : 'MAINT'}
-          </span>
-        </div>
-        {/* Timestamp */}
-        {isOnline && (
-          <div style={{
-            position: 'absolute', bottom: 6, left: 8,
-            fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace',
-          }}>
-            {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        {cat.icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {contact.name}
           </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div style={{ padding: '10px 12px', background: '#0a0f1e' }}>
-        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {cam.name}
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: priColor, flexShrink: 0 }} />
         </div>
-        <div style={{ fontSize: '0.68rem', color: '#475569', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {cam.type} · {cam.resolution}
-        </div>
+        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>{contact.phone}</div>
+        <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>{cat.label}</div>
       </div>
+      <button
+        onClick={() => onDial(contact)}
+        style={{
+          width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0,
+          background: `linear-gradient(135deg, ${cat.color}, ${cat.color}cc)`,
+          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `0 4px 12px ${cat.color}44`, transition: 'transform 0.15s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+        onMouseLeave={e => e.currentTarget.style.transform = ''}
+      >
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -329,10 +297,10 @@ function RecentTransactions({ payments, onViewAll }) {
 function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { stats, cameras, payments, alerts, resolveAlert, subscriptions, customers } = useData();
+  const { stats, payments, alerts, resolveAlert, customers, emergencies, recordCall } = useData();
+  const [dialContact, setDialContact] = React.useState(null);
 
   const revenueData = getRevenueChartData(payments);
-  const cameraStatusData = getCameraStatusData(cameras);
 
   const planDistribution = Object.entries(PLANS).map(([key, plan]) => ({
     name: plan.name,
@@ -344,7 +312,25 @@ function Dashboard() {
   const greeting = hour < 12 ? 'Selamat Pagi' : hour < 17 ? 'Selamat Siang' : 'Selamat Malam';
   const now = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  const onlineRate = stats.totalCameras > 0 ? Math.round((stats.onlineCameras / stats.totalCameras) * 100) : 0;
+  // Emergency data
+  const activeEmergencies = (emergencies || []).filter(e => e.status === 'active');
+  const priorityOne = (emergencies || []).filter(e => e.priority === 1 && e.status === 'active');
+  const topContacts = [...(emergencies || [])].filter(e => e.status === 'active').sort((a, b) => a.priority - b.priority).slice(0, 6);
+
+  const catCounts = (emergencies || []).reduce((acc, e) => {
+    acc[e.category] = (acc[e.category] || 0) + 1;
+    return acc;
+  }, {});
+
+  const handleDial = (contact) => {
+    setDialContact(contact);
+  };
+  const confirmDial = () => {
+    if (dialContact) {
+      recordCall(dialContact.id);
+      setDialContact(null);
+    }
+  };
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -389,7 +375,7 @@ function Dashboard() {
           {/* Quick stats inside banner */}
           <div style={{ display: 'flex', gap: '12px' }}>
             {[
-              { label: 'Kamera Aktif', value: `${stats.onlineCameras}/${stats.totalCameras}`, icon: '🎥', color: '#60a5fa' },
+              { label: 'Emergency Aktif', value: activeEmergencies.length, icon: '🚨', color: '#f87171' },
               { label: 'Pengguna', value: stats.activeCustomers, icon: '👥', color: '#a78bfa' },
               { label: 'Revenue', value: formatCurrency(stats.monthlyRevenue), icon: '💰', color: '#34d399' },
             ].map(item => (
@@ -410,14 +396,14 @@ function Dashboard() {
       {/* ── Main Stat Cards (4 col) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
         <StatCard
-          title="Total Kamera"
-          value={stats.totalCameras}
-          subtitle={`${stats.onlineCameras} online · ${stats.offlineCameras} offline · ${stats.maintenanceCameras} maint`}
-          gradient="linear-gradient(135deg,#3b82f6,#60a5fa)"
-          accentColor="#3b82f6"
-          trend={12}
-          onClick={() => navigate('/cameras')}
-          icon={<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.879V15.12a1 1 0 01-1.447.89L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
+          title="Kontak Darurat"
+          value={(emergencies || []).length}
+          subtitle={`${activeEmergencies.length} aktif · ${priorityOne.length} prioritas utama`}
+          gradient="linear-gradient(135deg,#ef4444,#f87171)"
+          accentColor="#ef4444"
+          trend={null}
+          onClick={() => navigate('/emergency')}
+          icon={<svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>}
         />
         <StatCard
           title="Total Pengguna"
@@ -453,10 +439,10 @@ function Dashboard() {
 
       {/* ── Secondary Mini Stats ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
-        <MiniStat label="Kamera Online" value={`${onlineRate}%`} color="#06b6d4" icon="📡" />
-        <MiniStat label="Kamera Offline" value={stats.offlineCameras} color="#ef4444" icon="⚠️" />
-        <MiniStat label="Peringatan Aktif" value={stats.unresolvedAlerts} color="#f59e0b" icon="🚨" />
-        <MiniStat label="Maintenance" value={stats.maintenanceCameras} color="#8b5cf6" icon="🔧" />
+        <MiniStat label="Emergency Aktif" value={activeEmergencies.length} color="#ef4444" icon="🚨" />
+        <MiniStat label="Prioritas Utama" value={priorityOne.length} color="#f59e0b" icon="🔴" />
+        <MiniStat label="Peringatan Sistem" value={stats.unresolvedAlerts} color="#f59e0b" icon="⚠️" />
+        <MiniStat label="Total Panggilan" value={stats.totalCalls || 0} color="#8b5cf6" icon="📞" />
       </div>
 
       {/* ── Charts Row ── */}
@@ -493,28 +479,31 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Camera Status + Plan Distribution */}
+        {/* Emergency Category + Plan Distribution */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {/* Camera Donut */}
+          {/* Emergency Category breakdown */}
           <div style={{ background: 'white', borderRadius: '18px', padding: '20px', border: '1px solid #f0f4f8', boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)', flex: 1 }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', marginBottom: '14px' }}>Status Kamera</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <PieChart width={80} height={80}>
-                <Pie data={cameraStatusData} cx={36} cy={36} innerRadius={22} outerRadius={36} paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>
-                  {cameraStatusData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                </Pie>
-              </PieChart>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {cameraStatusData.map(d => (
-                  <div key={d.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.fill, boxShadow: `0 0 6px ${d.fill}` }} />
-                      <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>{d.name}</span>
+            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', marginBottom: '14px' }}>Kategori Emergency</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {Object.entries(CAT_META).map(([key, meta]) => {
+                const count = catCounts[key] || 0;
+                const total = (emergencies || []).length || 1;
+                const pct = Math.round((count / total) * 100);
+                return (
+                  <div key={key}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.85rem' }}>{meta.icon}</span>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569' }}>{meta.label}</span>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{count}</span>
                     </div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>{d.value}</span>
+                    <div style={{ height: '5px', background: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: meta.color, borderRadius: '9999px', transition: 'width 0.6s ease' }} />
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
 
@@ -550,36 +539,67 @@ function Dashboard() {
         <RecentTransactions payments={payments} onViewAll={() => navigate('/payments')} />
       </div>
 
-      {/* ── CCTV Live Grid ── */}
+      {/* ── Emergency Quick Access ── */}
       <div style={{ background: 'white', borderRadius: '18px', padding: '24px', border: '1px solid #f0f4f8', boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '11px', background: 'linear-gradient(135deg,#0f172a,#1e3a8a)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#60a5fa" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.879V15.12a1 1 0 01-1.447.89L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <div style={{ width: '36px', height: '36px', borderRadius: '11px', background: 'linear-gradient(135deg,#ef4444,#f87171)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>Monitoring CCTV</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>Kontak Darurat Cepat</div>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '1px' }}>
-                <span style={{ color: '#10b981', fontWeight: 600 }}>{stats.onlineCameras} live</span>
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>{priorityOne.length} prioritas utama</span>
                 {' · '}
-                {stats.totalCameras} total kamera
+                {activeEmergencies.length} kontak aktif
               </div>
             </div>
           </div>
-          <button className="btn btn-outline btn-sm" onClick={() => navigate('/cameras')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button className="btn btn-outline btn-sm" onClick={() => navigate('/emergency')} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             Kelola Semua
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '14px' }}>
-          {cameras.slice(0, 6).map(cam => (
-            <CameraFeedCard key={cam.id} cam={cam} />
-          ))}
-        </div>
+        {topContacts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📞</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 500 }}>Belum ada kontak darurat</div>
+            <button onClick={() => navigate('/emergency')} style={{ marginTop: '12px', padding: '8px 20px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '9999px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
+              Tambah Kontak
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+            {topContacts.map(contact => (
+              <EmergencyQuickCard key={contact.id} contact={contact} onDial={handleDial} />
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* ── Dial Confirmation Modal ── */}
+      {dialContact && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '32px', maxWidth: '340px', width: '90%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>{CAT_META[dialContact.category]?.icon || '📞'}</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}>{dialContact.name}</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ef4444', marginBottom: '6px', letterSpacing: '0.05em' }}>{dialContact.phone}</div>
+            <div style={{ fontSize: '0.78rem', color: '#94a3b8', marginBottom: '24px' }}>{CAT_META[dialContact.category]?.label}</div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button onClick={() => setDialContact(null)} style={{ padding: '10px 24px', border: '1px solid #e2e8f0', borderRadius: '10px', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
+                Batal
+              </button>
+              <button onClick={confirmDial} style={{ padding: '10px 24px', border: 'none', borderRadius: '10px', background: 'linear-gradient(135deg,#ef4444,#f87171)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                Hubungi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

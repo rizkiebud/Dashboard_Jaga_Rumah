@@ -8,7 +8,7 @@ import Layout from './components/Layout/Layout';
 // Pages
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import CCTVManagement from './pages/CCTVManagement';
+import EmergencyCall from './pages/EmergencyCall';
 import CustomerManagement from './pages/CustomerManagement';
 import Payments from './pages/Payments';
 import Subscriptions from './pages/Subscriptions';
@@ -60,7 +60,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/cameras" element={<ProtectedRoute><CCTVManagement /></ProtectedRoute>} />
+      <Route path="/emergency" element={<ProtectedRoute><EmergencyCall /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute><CustomerManagement /></ProtectedRoute>} />
       <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
       <Route path="/subscriptions" element={<ProtectedRoute><Subscriptions /></ProtectedRoute>} />

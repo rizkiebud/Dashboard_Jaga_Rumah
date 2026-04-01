@@ -54,6 +54,17 @@ const SEED_ALERTS = [
   { id: 5, type: 'offline', cameraId: 8, cameraName: 'Kamera Dapur', message: 'Kamera tidak merespons', time: '2025-03-16 12:00:00', severity: 'high', resolved: true },
 ];
 
+const SEED_EMERGENCY = [
+  { id: 1, name: 'Polisi Sektor Menteng', category: 'police', phone: '021-3141234', altPhone: '110', address: 'Jl. Cikini Raya No.1, Menteng, Jakarta Pusat', area: 'Jakarta Pusat', priority: 1, status: 'active', respondTime: '5-10 menit', notes: 'Piket 24 jam', createdAt: '2024-01-10', calledCount: 3, lastCalled: '2025-03-10 14:22:00' },
+  { id: 2, name: 'Pemadam Kebakaran Jakarta Pusat', category: 'fire', phone: '021-6344565', altPhone: '113', address: 'Jl. Budi Kemuliaan No.5, Jakarta Pusat', area: 'Jakarta Pusat', priority: 1, status: 'active', respondTime: '8-15 menit', notes: 'Armada 3 unit', createdAt: '2024-01-10', calledCount: 1, lastCalled: '2024-12-01 09:00:00' },
+  { id: 3, name: 'IGD RS Cipto Mangunkusumo', category: 'medical', phone: '021-3910210', altPhone: '119', address: 'Jl. Diponegoro No.71, Senen, Jakarta Pusat', area: 'Jakarta Pusat', priority: 1, status: 'active', respondTime: '10-20 menit', notes: 'Rumah sakit rujukan nasional', createdAt: '2024-01-15', calledCount: 2, lastCalled: '2025-02-14 20:15:00' },
+  { id: 4, name: 'Satpam Komplek Sudirman', category: 'security', phone: '081298765432', altPhone: '', address: 'Pos Satpam Gerbang Utama, Jl. Sudirman No.1', area: 'Jakarta Selatan', priority: 2, status: 'active', respondTime: '2-5 menit', notes: 'Petugas on-site 24 jam', createdAt: '2024-02-20', calledCount: 7, lastCalled: '2025-03-15 03:30:00' },
+  { id: 5, name: 'Polres Jakarta Selatan', category: 'police', phone: '021-5222900', altPhone: '110', address: 'Jl. Wijaya II No.1, Kebayoran Baru', area: 'Jakarta Selatan', priority: 2, status: 'active', respondTime: '10-20 menit', notes: '', createdAt: '2024-02-20', calledCount: 0, lastCalled: null },
+  { id: 6, name: 'Ambulans Yayasan Ambulans Gawat Darurat', category: 'medical', phone: '021-65303118', altPhone: '119', address: 'Jl. Penjernihan I No.26, Bendungan Hilir', area: 'Jakarta', priority: 1, status: 'active', respondTime: '5-15 menit', notes: 'Layanan ambulans swasta', createdAt: '2024-03-05', calledCount: 1, lastCalled: '2025-01-20 11:00:00' },
+  { id: 7, name: 'BPBD DKI Jakarta', category: 'disaster', phone: '021-1500044', altPhone: '112', address: 'Jl. Abdul Muis No.66, Gambir, Jakarta Pusat', area: 'Jakarta', priority: 1, status: 'active', respondTime: '15-30 menit', notes: 'Bencana & kedaruratan wilayah', createdAt: '2024-03-05', calledCount: 0, lastCalled: null },
+  { id: 8, name: 'Security PT Maju Bersama', category: 'security', phone: '083456789099', altPhone: '', address: 'Jl. Gatot Subroto No.12, Jakarta Selatan', area: 'Jakarta Selatan', priority: 2, status: 'inactive', respondTime: '3-7 menit', notes: 'Khusus area gedung', createdAt: '2024-03-10', calledCount: 4, lastCalled: '2025-02-28 17:00:00' },
+];
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'jaga_rumah_data';
 
@@ -79,12 +90,13 @@ export const DataProvider = ({ children }) => {
   const [payments, setPayments] = useState(stored?.payments || SEED_PAYMENTS);
   const [subscriptions, setSubscriptions] = useState(stored?.subscriptions || SEED_SUBSCRIPTIONS);
   const [alerts, setAlerts] = useState(stored?.alerts || SEED_ALERTS);
-  const [nextIds, setNextIds] = useState(stored?.nextIds || { camera: 9, customer: 7, payment: 11, subscription: 7 });
+  const [emergencies, setEmergencies] = useState(stored?.emergencies || SEED_EMERGENCY);
+  const [nextIds, setNextIds] = useState(stored?.nextIds || { camera: 9, customer: 7, payment: 11, subscription: 7, emergency: 9 });
 
   // Persist
   useEffect(() => {
-    saveToStorage({ cameras, customers, payments, subscriptions, alerts, nextIds });
-  }, [cameras, customers, payments, subscriptions, alerts, nextIds]);
+    saveToStorage({ cameras, customers, payments, subscriptions, alerts, emergencies, nextIds });
+  }, [cameras, customers, payments, subscriptions, alerts, emergencies, nextIds]);
 
   const nextId = useCallback((type) => {
     const id = nextIds[type];
@@ -176,6 +188,28 @@ export const DataProvider = ({ children }) => {
     setAlerts(prev => prev.map(a => ({ ...a, resolved: true })));
   }, []);
 
+  // ── EMERGENCY CALLS ───────────────────────────────────────────────────────
+  const addEmergency = useCallback((data) => {
+    const item = { ...data, id: nextId('emergency'), createdAt: new Date().toISOString().split('T')[0], calledCount: 0, lastCalled: null };
+    setEmergencies(prev => [...prev, item]);
+    return item;
+  }, [nextId]);
+
+  const updateEmergency = useCallback((id, data) => {
+    setEmergencies(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
+  }, []);
+
+  const deleteEmergency = useCallback((id) => {
+    setEmergencies(prev => prev.filter(e => e.id !== id));
+  }, []);
+
+  const recordCall = useCallback((id) => {
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    setEmergencies(prev => prev.map(e =>
+      e.id === id ? { ...e, calledCount: e.calledCount + 1, lastCalled: now } : e
+    ));
+  }, []);
+
   // ── Stats ─────────────────────────────────────────────────────────────────
   const stats = {
     totalCameras: cameras.length,
@@ -189,6 +223,9 @@ export const DataProvider = ({ children }) => {
     pendingPayments: payments.filter(p => p.status === 'pending').length,
     activeSubscriptions: subscriptions.filter(s => s.status === 'active').length,
     unresolvedAlerts: alerts.filter(a => !a.resolved).length,
+    totalEmergencies: emergencies.length,
+    activeEmergencies: emergencies.filter(e => e.status === 'active').length,
+    totalCalls: emergencies.reduce((acc, e) => acc + (e.calledCount || 0), 0),
   };
 
   return (
@@ -198,6 +235,7 @@ export const DataProvider = ({ children }) => {
       payments, addPayment, updatePayment, deletePayment,
       subscriptions, addSubscription, updateSubscription, deleteSubscription,
       alerts, resolveAlert, clearAlerts,
+      emergencies, addEmergency, updateEmergency, deleteEmergency, recordCall,
       stats,
     }}>
       {children}
